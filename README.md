@@ -1,16 +1,25 @@
 # @chrisstone/ts-jsonapi
 
-TypeScript type definitions for [JSON:API v1.1](https://jsonapi.org/format/).
+TypeScript type definitions and serialization/deserialization utilities for [JSON:API v1.1](https://jsonapi.org/format/).
 
-Provides a complete, spec-aligned set of interfaces and types for building and consuming JSON:API-compliant APIs in TypeScript — with no dependencies.
+Provides a complete, spec-aligned set of interfaces, types, and runtime helper functions for building and consuming JSON:API-compliant APIs in TypeScript — with no external dependencies.
 
 ## Installation
 
 ```bash
-npm install --save-dev @chrisstone/ts-jsonapi
+npm install @chrisstone/ts-jsonapi
 ```
 
-> **Peer dependency:** TypeScript ≥ 4.7 is required.
+> **Peer dependency:** TypeScript = 4.7 is required.
+
+## Features
+
+- **Spec-Aligned Types:** Comprehensive interfaces matching the JSON:API v1.1 specification.
+- **Serialization Helpers:** Easily convert flat database objects or DTOs into compliant JSON:API resource documents.
+- **Deserialization Helpers:** Flatten JSON:API resource objects back into simple, key-value objects.
+- **Sparse Fieldsets:** Built-in support for filtering fields during serialization.
+- **Dual-Package Delivery:** Fully supports both ES Modules (`import`) and CommonJS (`require`).
+- **Zero Dependencies:** Extremely lightweight package.
 
 ## Usage
 
@@ -64,7 +73,7 @@ const query: JsonApiQuery<ArticleAttributes> = {
 ### Typing error responses
 
 ```typescript
-import type { JsonApiDoc, JsonApiDocErr } from '@chrisstone/ts-jsonapi';
+import type { JsonApiDoc } from '@chrisstone/ts-jsonapi';
 
 const errorResponse: JsonApiDoc<never> = {
   errors: [
@@ -77,6 +86,81 @@ const errorResponse: JsonApiDoc<never> = {
     },
   ],
 };
+```
+
+### Serialization & Deserialization Helpers
+
+```typescript
+import {
+  serializeOne,
+  serializeMany,
+  deserializeOne,
+  deserializeMany
+} from '@chrisstone/ts-jsonapi';
+
+interface Article {
+  id: string;
+  title: string;
+  body: string;
+  published: boolean;
+}
+
+const article: Article = {
+  id: '1',
+  title: 'JSON:API in TypeScript',
+  body: 'This library now includes utility functions!',
+  published: true
+};
+
+// 1. Serializing a single entity
+const singleDoc = serializeOne(article, 'articles');
+/*
+Resulting JsonApiDoc geometry:
+{
+  data: {
+    id: '1',
+    type: 'articles',
+    attributes: {
+      title: 'JSON:API in TypeScript',
+      body: 'This library now includes utility functions!',
+      published: true
+    }
+  }
+}
+*/
+
+// 2. Serializing a collection with pagination metadata
+const collectionDoc = serializeMany([article], 'articles', {
+  limit: 10,
+  offset: 0
+});
+/*
+Resulting JsonApiDoc geometry:
+{
+  data: [ ... ],
+  meta: {
+    page: {
+      limit: 10,
+      offset: 0,
+      count: 1
+    }
+  }
+}
+*/
+
+// 3. Filtering attributes using sparse fieldsets
+const sparseDoc = serializeOne(article, 'articles', {
+  fields: ['title'] // or { articles: ['title'] }
+});
+// sparseDoc.data.attributes will only contain: { title: 'JSON:API in TypeScript' }
+
+// 4. Using a custom ID extractor (e.g. for database objects with `uuid` or `_id`)
+const customDbItem = { uuid: 'abc-123', name: 'Custom Entity' };
+const docWithCustomId = serializeOne(customDbItem, 'items', undefined, (item) => item.uuid);
+
+// 5. Deserializing a JSON:API resource back to a flat entity
+const flatArticle = deserializeOne<Article>(singleDoc.data!);
+// flatArticle is: { id: '1', title: 'JSON:API in TypeScript', ... }
 ```
 
 ## Exported Types
@@ -93,6 +177,19 @@ const errorResponse: JsonApiDoc<never> = {
 | `JsonApiResourceCreate<T>` | Resource object for POST requests (optional `id`) |
 | `JsonApiDoc<T>` | Top-level document wrapper (success or error response) |
 | `JsonApiQuery<T>` | Typed query parameter object (`fields`, `include`, `sort`, `filter`, `page`) |
+| `JsonApiFields` | Sparse fieldset or filter definition (`Record<string, string[]> \| string[]`) |
+| `SerializeOptions` | Options structure accepted by serialization functions |
+| `SerializeCollectionOptions` | Pagination options structure for collection serialization |
+
+## Exported Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `serializeOne` | `(item, type, options?, idExtractor?)` | Serializes a single plain object into a JSON:API resource document. |
+| `serializeMany` | `(items, type, options?, idExtractor?)` | Serializes an array of plain objects into a JSON:API collection document with pagination metadata. |
+| `deserializeOne` | `(resource)` | Flattens a single JSON:API resource object back into a plain object (merges `id` and `attributes`). |
+| `deserializeMany` | `(resources)` | Flattens an array of JSON:API resource objects back into an array of plain objects. |
+| `applyFields` | `(item, type, fields?)` | Utility that filters an attributes object based on sparse fieldset rules. |
 
 ## Spec Compliance
 
