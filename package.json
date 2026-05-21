@@ -1,0 +1,58 @@
+{
+	"name": "@chrisstone/ts-jsonapi",
+	"version": "0.1.0",
+	"description": "TypeScript type definitions for JSON:API v1.1",
+	"homepage": "https://github.com/chrisstone/ts-jsonapi#readme",
+	"bugs": {
+		"url": "https://github.com/chrisstone/ts-jsonapi/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/chrisstone/ts-jsonapi.git"
+	},
+	"license": "MIT",
+	"author": "Chris Stone",
+	"keywords": [
+		"jsonapi",
+		"json:api",
+		"typescript",
+		"types",
+		"rest",
+		"api"
+	],
+	"files": [
+		"dist/**/*.js",
+		"dist/**/*.js.map",
+		"dist/**/*.d.ts",
+		"dist/**/*.d.ts.map",
+		"README.md",
+		"LICENSE"
+	],
+	"main": "dist/index.js",
+	"module": "dist/esm/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/esm/index.js",
+			"require": "./dist/index.js",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc && tsc -p tsconfig.esm.json",
+		"test": "tsc -p tsconfig.spec.json && npx jasmine --config=spec/support/jasmine.json",
+		"prepublishOnly": "npm run build"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"peerDependencies": {
+		"typescript": ">=4.7"
+	},
+	"devDependencies": {
+		"@types/jasmine": "^6.0.0",
+		"jasmine": "^6.2.0",
+		"typescript": "^5.0.0"
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"outDir": "./dist-spec",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"types": ["jasmine"],
+		"declaration": false,
+		"declarationMap": false,
+		"sourceMap": true
+	},
+	"include": [
+		"src/**/*",
+		"spec/**/*"
+	]
+}
