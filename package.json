@@ -1,6 +1,6 @@
 {
 	"name": "@chrisstone/ts-jsonapi",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"description": "TypeScript type definitions for JSON:API v1.1",
 	"homepage": "https://github.com/chrisstone/ts-jsonapi#readme",
 	"bugs": {
@@ -48,7 +48,7 @@
 	"scripts": {
 		"build": "tsc && tsc -p tsconfig.esm.json && node -e \"require('fs').writeFileSync('dist/esm/package.json', '{\\\"type\\\":\\\"module\\\"}\\\\n')\"",
 		"test": "tsc -p tsconfig.spec.json && npx jasmine --config=spec/support/jasmine.json",
-		"prepublishOnly": "npm run build"
+		"prepare": "npm run build"
 	},
 	"engines": {
 		"node": ">=22"
