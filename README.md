@@ -10,8 +10,6 @@ Provides a complete, spec-aligned set of interfaces, types, and runtime helper f
 npm install @chrisstone/ts-jsonapi
 ```
 
-> **Peer dependency:** TypeScript = 4.7 is required.
-
 ## Features
 
 - **Spec-Aligned Types:** Comprehensive interfaces matching the JSON:API v1.1 specification.
@@ -168,7 +166,7 @@ const flatArticle = deserializeOne<Article>(singleDoc.data!);
 | Type | Description |
 |------|-------------|
 | `JsonApiMeta` | Arbitrary non-standard metadata object |
-| `JsonApiLink` | A URL string or link object with `href`, `title`, `reflang`, `meta` |
+| `JsonApiLink` | A URL string or link object with `href`, `title`, `hreflang`, `meta` |
 | `JsonApiLinks` | Links object (self, related, pagination, etc.) |
 | `JsonApiDocErr` | A single error object within an `errors` array |
 | `JsonApiResourceId` | Resource identifier object (`type` + `id`) |
@@ -186,7 +184,7 @@ const flatArticle = deserializeOne<Article>(singleDoc.data!);
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `serializeOne` | `(item, type, options?, idExtractor?)` | Serializes a single plain object into a JSON:API resource document. |
-| `serializeMany` | `(items, type, options?, idExtractor?)` | Serializes an array of plain objects into a JSON:API collection document with pagination metadata. |
+| `serializeMany` | `(items, type, options?, idExtractor?)` | Serializes an array of plain objects into a JSON:API collection document, with `meta.page` pagination metadata when `limit` or `offset` is given. |
 | `deserializeOne` | `(resource)` | Flattens a single JSON:API resource object back into a plain object (merges `id` and `attributes`). |
 | `deserializeMany` | `(resources)` | Flattens an array of JSON:API resource objects back into an array of plain objects. |
 | `applyFields` | `(item, type, fields?)` | Utility that filters an attributes object based on sparse fieldset rules. |
@@ -198,6 +196,10 @@ These types target [JSON:API v1.1](https://jsonapi.org/format/). Notable type-le
 - TypeScript cannot prevent `data` and `errors` from coexisting in the same document.
 - `included` requiring a top-level `data` member cannot be enforced statically.
 - Relationship objects requiring at least one of `links`, `data`, or `meta` is documented but not enforced by the type.
+
+## AI Usage Disclosure
+
+This project utilizes AI coding assistants for code generation and debugging. All AI-generated code has been reviewed, tested, and validated by human maintainers.
 
 ## License
 

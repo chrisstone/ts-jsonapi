@@ -15,6 +15,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$PKG_VERSION" != "${{ github.ref_name }}" ]; then
+            echo "Tag ${{ github.ref_name }} does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
       - run: npm ci
       - run: npm test
       - run: npm run build
@@ -37,6 +44,7 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org/
       - run: npm ci
+      - run: npm pack --dry-run
       - run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}

@@ -169,9 +169,12 @@ export interface JsonApiResourceCreate<T = JsonApiMeta> {
  * or an error response (with an `errors` member).
  *
  * @template T The type of the primary data being returned.
+ * @template I The type of resources in `included`. Defaults to an untyped
+ *             resource, so it only needs to be supplied when typed access to
+ *             `included` is wanted.
  * @see {@link https://jsonapi.org/format/#document-top-level}
  */
-export interface JsonApiDoc<T> {
+export interface JsonApiDoc<T, I extends JsonApiResource<any> = JsonApiResource> {
 	/** An object describing the server's implementation. */
 	jsonapi?: {
 		version?: string;
@@ -192,7 +195,7 @@ export interface JsonApiDoc<T> {
 	 * Note: Per spec, `included` MUST NOT appear unless a top-level `data` member is also present.
 	 * This constraint cannot be enforced by TypeScript alone and must be validated at runtime.
 	 */
-	included?: Array<JsonApiResource>;
+	included?: Array<I>;
 }
 
 /**
@@ -277,8 +280,9 @@ export interface SerializeCollectionOptions extends SerializeOptions {
  * @param item   - The raw attributes object to filter.
  * @param type   - The JSON:API resource type name.
  * @param fields - The sparse fieldset configuration.
- * @returns A partial copy of `item` containing only the permitted fields,
- *          or the original `item` when no fieldset is configured.
+ * @returns A partial copy of `item` containing only the permitted fields
+ *          (empty when none of them exist, or the list is empty), or the
+ *          original `item` when no fieldset is configured for `type`.
  */
 export function applyFields<T extends Record<string, any>>(
 	item: T,
@@ -294,7 +298,7 @@ export function applyFields<T extends Record<string, any>>(
 		fieldList = (fields as Record<string, string[]>)[type];
 	}
 
-	if (!fieldList || fieldList.length === 0) return item;
+	if (!fieldList) return item;
 
 	const result: Partial<T> = {};
 	for (const key of fieldList) {
@@ -303,14 +307,15 @@ export function applyFields<T extends Record<string, any>>(
 		}
 	}
 
-	return Object.keys(result).length > 0 ? result : item;
+	return result;
 }
 
 /**
  * Serializes a single plain object into a JSON:API document.
  *
  * The `id` field is extracted from the object and coerced to a string.
- * All remaining attributes (minus `id`) are placed under `attributes`.
+ * The object's properties are placed under `attributes` as-is; callers that
+ * want strictly spec-compliant output should omit `id` (and `type`) from `item`.
  *
  * @param item    - The raw entity or DTO to serialize.
  * @param type    - The JSON:API resource type name (e.g. `'articles'`).
@@ -339,8 +344,8 @@ export function serializeOne<T extends Record<string, any>>(
 /**
  * Serializes an array of plain objects into a JSON:API document.
  *
- * Pagination metadata (`meta.page`) is automatically populated from
- * the `limit`, `offset`, and result count when options are provided.
+ * Pagination metadata (`meta.page`) is populated from `limit`, `offset`,
+ * and the result count only when `limit` or `offset` is provided.
  *
  * @param items   - The array of raw entities or DTOs to serialize.
  * @param type    - The JSON:API resource type name (e.g. `'articles'`).
@@ -358,20 +363,20 @@ export function serializeMany<T extends Record<string, any>>(
 	options?: SerializeCollectionOptions,
 	idExtractor?: (item: T) => string
 ): JsonApiDoc<JsonApiResource<Partial<T>>[]> {
-	return {
+	const doc: JsonApiDoc<JsonApiResource<Partial<T>>[]> = {
 		data: items.map(item => ({
 			id: idExtractor ? idExtractor(item) : (item.id != null ? String(item.id) : ''),
 			type,
 			attributes: applyFields(item, type, options?.fields) as Partial<T>
-		})),
-		meta: {
-			page: {
-				limit: options?.limit ?? 100,
-				offset: options?.offset ?? 0,
-				count: items.length
-			}
-		}
+		}))
 	};
+	if (options?.limit != null || options?.offset != null) {
+		const page: JsonApiMeta = { count: items.length };
+		if (options.limit != null) page.limit = options.limit;
+		if (options.offset != null) page.offset = options.offset;
+		doc.meta = { page };
+	}
+	return doc;
 }
 
 /**

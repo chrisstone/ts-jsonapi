@@ -71,22 +71,22 @@ describe('applyFields', () => {
 			expect(result).toBe(ARTICLE_A);
 		});
 
-		it('should return the original item when given an empty string array', () => {
+		it('should return an empty object when given an empty string array', () => {
 			const fields: JsonApiFields = [] as string[];
 			const result = applyFields(ARTICLE_A, 'articles', fields);
-			expect(result).toBe(ARTICLE_A);
+			expect(result).toEqual({});
 		});
 
-		it('should return the original item when the Record entry is an empty array', () => {
+		it('should return an empty object when the Record entry is an empty array', () => {
 			const fields: JsonApiFields = { articles: [] };
 			const result = applyFields(ARTICLE_A, 'articles', fields);
-			expect(result).toBe(ARTICLE_A);
+			expect(result).toEqual({});
 		});
 
-		it('should return the original item when none of the requested fields exist on the item', () => {
+		it('should return an empty object when none of the requested fields exist on the item', () => {
 			const fields: JsonApiFields = ['nonexistent', 'also_missing'];
 			const result = applyFields(ARTICLE_A, 'articles', fields);
-			expect(result).toBe(ARTICLE_A);
+			expect(result).toEqual({});
 		});
 
 		it('should handle an item with no own properties gracefully', () => {
@@ -202,13 +202,14 @@ describe('serializeMany', () => {
 			expect(doc.data![1].attributes!.title).toBe('Second Post');
 		});
 
-		it('should populate meta.page with default pagination when no options are given', () => {
+		it('should omit meta when no options are given', () => {
 			const doc = serializeMany([ARTICLE_A], 'articles');
-			expect(doc.meta).toBeDefined();
-			expect(doc.meta!.page).toBeDefined();
-			expect(doc.meta!.page.limit).toBe(100);
-			expect(doc.meta!.page.offset).toBe(0);
-			expect(doc.meta!.page.count).toBe(1);
+			expect(doc.meta).toBeUndefined();
+		});
+
+		it('should include only the provided pagination values in meta.page', () => {
+			const doc = serializeMany([ARTICLE_A], 'articles', { limit: 10 });
+			expect(doc.meta!.page).toEqual({ limit: 10, count: 1 });
 		});
 
 		it('should use provided limit and offset in meta.page', () => {
@@ -248,15 +249,14 @@ describe('serializeMany', () => {
 
 	describe('negative / edge cases', () => {
 		it('should return an empty data array for an empty input array', () => {
-			const doc = serializeMany([], 'articles');
+			const doc = serializeMany([], 'articles', { limit: 10, offset: 0 });
 			expect(doc.data).toEqual([]);
 			expect(doc.meta!.page.count).toBe(0);
 		});
 
-		it('should default limit to 100 and offset to 0 when options exist but are partial', () => {
+		it('should omit meta when options contain no pagination values', () => {
 			const doc = serializeMany([ARTICLE_A], 'articles', { fields: ['title'] });
-			expect(doc.meta!.page.limit).toBe(100);
-			expect(doc.meta!.page.offset).toBe(0);
+			expect(doc.meta).toBeUndefined();
 		});
 
 		it('should handle items with missing id properties', () => {
